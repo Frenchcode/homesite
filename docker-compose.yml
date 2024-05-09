@@ -43,7 +43,7 @@ services:
         NEXT_PUBLIC_ENV_VARIABLE: "${NEXT_PUBLIC_ENV_VARIABLE}"
     container_name: "${COMPOSE_PROJECT_NAME}_homenext"
     restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
-    profiles: ["homesite_app"]
+    profiles: ["home_app"]
     security_opt:
       - no-new-privileges:true
     labels:
