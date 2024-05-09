@@ -1,0 +1,67 @@
+version: "3"
+services:
+  web:
+    image: nginx:1.25
+    working_dir: /var/www/html/homesite
+    container_name: "${COMPOSE_PROJECT_NAME}_server"
+    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    profiles: ["home_server"]
+    depends_on:
+      - homenext
+    security_opt:
+      - no-new-privileges:true
+    volumes:
+      - "./homesite:/var/www/html/homesite"
+      - "./config/nginx/nginx.conf:/etc/nginx/nginx.conf"
+      - "./config/nginx/default.conf:/etc/nginx/sites-enabled"
+      #- "./config/nginx/conf:/etc/nginx/conf.d/"
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=homesite-proxy"
+      - "traefik.http.routers.homesite-secure.entrypoints=websecure"
+      - "traefik.http.routers.homesite-secure.rule=Host(`www.ephraimbokuma.com`) Host(`ephraimbokuma.com`)"
+      - "traefik.http.middlewares.homesite-https.redirectscheme.scheme=https"
+        #- "traefik.http.routers.nginx-http.middlewares=whoami-https"
+        #- "traefik.http.routers.nginx.tls=true"
+        #- "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.routers.homesite-secure.service=homesite-server-homesite"
+      - "traefik.http.services.homesite-server-homesite.loadbalancer.server.port=80"
+    environment:
+      NGINX_HOST: "www.ephraimbokuma.com"
+      NGINX_PORT: "80"
+    command: ['nginx', '-g', 'daemon off;']
+    networks:
+      - homesite-proxy
+  
+  homenext:
+    user: node
+    build:
+      context: ./homesite
+      dockerfile: Dockerfile
+      args:
+        ENV_VARIABLE: "${ENV_VARIABLE}"
+        NEXT_PUBLIC_ENV_VARIABLE: "${NEXT_PUBLIC_ENV_VARIABLE}"
+    container_name: "${COMPOSE_PROJECT_NAME}_homenext"
+    restart: "${DOCKER_RESTART_POLICY:-unless-stopped}"
+    profiles: ["homesite_app"]
+    security_opt:
+      - no-new-privileges:true
+    labels:
+      - "traefik.enable=true"
+      - "traefik.docker.network=homesite-proxy"
+      - "traefik.http.routers.homenext-secure.entrypoints=websecure"
+      - "traefik.http.routers.homenext-secure.rule=Host(`www.ephraimbokuma.com`) || Host(`ephraimbokuma.com`)"
+      - "traefik.http.middlewares.homenext-https.redirectscheme.scheme=https"
+        #- "traefik.http.routers.nginx-http.middlewares=whoami-https"
+        #- "traefik.http.routers.nginx.tls=true"
+        #- "traefik.http.routers.traefik-secure.service=api@internal"
+      - "traefik.http.routers.homenext-secure.service=homenext-server-homenext"
+      - "traefik.http.services.homenext-server-homenext.loadbalancer.server.port=3000"
+    stdin_open: true
+    tty: true
+    networks:
+      - homesite-proxy
+
+networks:
+  homesite-proxy:
+    external: true
