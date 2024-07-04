@@ -1,5 +1,6 @@
 'use client'
 
+import { FloatingNavBar } from "@/components/ui/floating-navbar";
 import { useEffect, useRef } from "react";
 
 
@@ -8,7 +9,6 @@ export default function Home() {
 
   useEffect(() => {
     const handleMouseMove = (event: MouseEvent) => {
-      console.log("We are moving");
       const blob = blobArea.current;
       if (blob) {
         const half = blob.offsetWidth / 2;
@@ -28,6 +28,7 @@ export default function Home() {
     <main className="flex min-h-screen flex-col items-center justify-between">
       <div id="overlay"></div>
       <div id="blob" ref={blobArea}></div>
+      <FloatingNavBar />
     </main>
     </>
   );
